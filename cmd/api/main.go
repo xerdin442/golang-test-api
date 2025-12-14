@@ -5,24 +5,26 @@ import (
 	"log"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 )
 
-func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("Failed to load environment variables")
-	}
+type application struct {
+	port string
+	// models
+}
 
+func main() {
 	_, err := sql.Open("mysql", os.Getenv("GOOSE_DBSTRING"))
 	if err != nil {
 		panic(err)
 	}
 
-	r := gin.Default()
+	app := &application{
+		port: os.Getenv("PORT"),
+	}
 
-	if err := r.Run(os.Getenv("PORT")); err != nil {
-		log.Fatalf("failed to run server: %v", err)
+	if err := app.serve(); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }
