@@ -8,11 +8,12 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/xerdin442/api-practice/internal/env"
 	repo "github.com/xerdin442/api-practice/internal/repository"
+	"github.com/xerdin442/api-practice/internal/service"
 )
 
 type application struct {
-	port   int
-	models repo.Registry
+	port     int
+	services *service.Manager
 }
 
 func main() {
@@ -28,11 +29,13 @@ func main() {
 	}
 	defer db.Close()
 
-	// Configure app
+	// Initialize repositories and services
 	registry := repo.NewRegistry(db)
+	services := service.NewManager(registry)
+
 	app := &application{
-		port:   env.GetInt("PORT"),
-		models: *registry,
+		port:     env.GetInt("PORT"),
+		services: services,
 	}
 
 	// Start the http server
