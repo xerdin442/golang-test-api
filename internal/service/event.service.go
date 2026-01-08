@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
@@ -18,7 +19,7 @@ func NewEventService(r repo.EventRepoInterface) *EventService {
 	return &EventService{repo: r}
 }
 
-func (s *EventService) CreateEvent(ctx context.Context, dto dto.CreateEventRequest, userID int32) (database.Event, error) {
+func (s *EventService) CreateEvent(ctx context.Context, dto dto.EventRequest, userID int32) (database.Event, error) {
 	if dto.Datetime.Before(time.Now()) {
 		return database.Event{}, ErrInvalidDate
 	}
@@ -38,4 +39,63 @@ func (s *EventService) CreateEvent(ctx context.Context, dto dto.CreateEventReque
 
 	eventID, _ := result.LastInsertId()
 	return s.repo.GetEvent(ctx, int32(eventID))
+}
+
+func (s *EventService) UpdateEvent(ctx context.Context, dto dto.EventRequest, eventID, userID int32) (database.Event, error) {
+	if dto.Datetime.Before(time.Now()) {
+		return database.Event{}, ErrInvalidDate
+	}
+
+	event, _ := s.repo.GetEvent(ctx, eventID)
+	if event.OwnerID != userID {
+		return database.Event{}, errors.New("An event can only be updated by the owner")
+	}
+
+	arg := database.UpdateEventParams{
+		Name:        dto.Name,
+		Description: dto.Description,
+		Location:    dto.Location,
+		Datetime:    dto.Datetime,
+		OwnerID:     userID,
+		ID:          eventID,
+	}
+
+	result, err := s.repo.UpdateEvent(ctx, arg)
+	if err != nil {
+		return database.Event{}, err
+	}
+
+	updatedEventID, _ := result.LastInsertId()
+	return s.repo.GetEvent(ctx, int32(updatedEventID))
+}
+
+func (s *EventService) ListEvents(ctx context.Context) ([]database.Event, error) {
+	result, err := s.repo.ListEvents(ctx)
+	if err != nil {
+		return []database.Event{}, err
+	}
+
+	return result, nil
+}
+
+func (s *EventService) GetEvent(ctx context.Context, eventID int32) (database.Event, error) {
+	result, err := s.repo.GetEvent(ctx, eventID)
+	if err != nil {
+		return database.Event{}, err
+	}
+
+	return result, nil
+}
+
+func (s *EventService) DeleteEvent(ctx context.Context, eventID, userID int32) error {
+	event, _ := s.repo.GetEvent(ctx, eventID)
+	if event.OwnerID != userID {
+		return errors.New("An event can only be deleted by the owner")
+	}
+
+	if err := s.repo.DeleteEvent(ctx, eventID); err != nil {
+		return err
+	}
+
+	return nil
 }

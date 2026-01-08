@@ -2,7 +2,7 @@ package dto
 
 import "time"
 
-type CreateEventRequest struct {
+type EventRequest struct {
 	Name        string    `json:"name" binding:"required"`
 	Description string    `json:"description"`
 	Location    string    `json:"location" binding:"required"`

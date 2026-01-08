@@ -16,8 +16,16 @@ func (app *application) routes() http.Handler {
 
 	auth := v1.Group("/auth")
 	{
-		auth.POST("/signup")
-		auth.POST("/login")
+		auth.POST("/signup", h.Signup)
+		auth.POST("/login", h.Login)
+	}
+
+	users := v1.Group("/users")
+	users.Use(middleware.AuthMiddleware())
+	{
+		users.POST("/logout", h.Logout)
+		users.GET("/profile", h.GetProfile)
+		users.PUT("/profile", h.UpdateProfile)
 	}
 
 	events := v1.Group("/events")
