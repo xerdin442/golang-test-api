@@ -3,6 +3,8 @@ package handlers
 import (
 	"errors"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xerdin442/api-practice/internal/api/dto"
@@ -50,7 +52,21 @@ func (h *RouteHandler) Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
-func (h *RouteHandler) Logout(c *gin.Context) {}
+func (h *RouteHandler) Logout(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	exp, _ := c.Get("token_exp")
+	tokenExp := exp.(time.Time)
+
+	err := h.cache.SetJTI(c.Request.Context(), tokenString, "blacklisted", tokenExp)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token blacklist error"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Logged out!"})
+}
 
 func (h *RouteHandler) GetProfile(c *gin.Context) {
 	uid, exists := c.Get("userID")

@@ -64,10 +64,6 @@ func (s *UserService) Login(ctx context.Context, dto dto.LoginRequest) (string, 
 	return middleware.GenerateToken(user.ID)
 }
 
-func (s *UserService) Logout(ctx context.Context, userID int32) error {
-	return nil
-}
-
 func (s *UserService) GetProfile(ctx context.Context, userID int32) (database.User, error) {
 	return s.repo.GetUserByID(ctx, userID)
 }

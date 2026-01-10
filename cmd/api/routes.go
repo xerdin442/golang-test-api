@@ -10,7 +10,7 @@ import (
 
 func (app *application) routes() http.Handler {
 	r := gin.Default()
-	h := handlers.New(app.services)
+	h := handlers.New(app.services, app.cache)
 
 	v1 := r.Group("api/v1")
 
@@ -21,14 +21,14 @@ func (app *application) routes() http.Handler {
 	}
 
 	users := v1.Group("/users")
-	users.Use(middleware.AuthMiddleware())
+	users.Use(middleware.AuthMiddleware(app.cache))
 	{
 		users.POST("/logout", h.Logout)
 		users.GET("/profile", h.GetProfile)
 	}
 
 	events := v1.Group("/events")
-	events.Use(middleware.AuthMiddleware())
+	events.Use(middleware.AuthMiddleware(app.cache))
 	{
 		events.POST("/", h.CreateEvent)
 		events.GET("/", h.GetEvent)
@@ -38,7 +38,7 @@ func (app *application) routes() http.Handler {
 	}
 
 	attendees := v1.Group("/events/:id/attendees")
-	attendees.Use(middleware.AuthMiddleware())
+	attendees.Use(middleware.AuthMiddleware(app.cache))
 	{
 		attendees.GET("/", h.GetEventAttendees)
 		attendees.POST("/rsvp", h.ReserveTicket)

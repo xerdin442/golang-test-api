@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	_ "github.com/joho/godotenv/autoload"
+	"github.com/xerdin442/api-practice/internal/cache"
 	"github.com/xerdin442/api-practice/internal/env"
 )
 
@@ -31,7 +32,7 @@ func GenerateToken(userID int32) (string, error) {
 	return token.SignedString(secretKey)
 }
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(cache *cache.Redis) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -45,8 +46,10 @@ func AuthMiddleware() gin.HandlerFunc {
 			return secretKey, nil
 		})
 
-		if err != nil || !token.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token. Please log in"})
+		isBlacklisted, err := cache.IsBlacklisted(c.Request.Context(), tokenString)
+
+		if err != nil || !token.Valid || isBlacklisted {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Session expired. Please log in"})
 			return
 		}
 
@@ -57,6 +60,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("userID", claims.UserID)
+		c.Set("token_exp", time.Unix(claims.ExpiresAt.Unix(), 0))
 		c.Next()
 	}
 }
