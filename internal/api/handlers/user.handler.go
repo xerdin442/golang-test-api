@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xerdin442/api-practice/internal/api/dto"
+	"github.com/xerdin442/api-practice/internal/service"
 )
 
 func (h *RouteHandler) Signup(c *gin.Context) {
@@ -12,6 +14,19 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
+
+	user, err := h.services.User.Signup(c.Request.Context(), req)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrEmailAlreadyExists):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured during signup"})
+		}
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"user": user})
 }
 
 func (h *RouteHandler) Login(c *gin.Context) {
@@ -22,7 +37,14 @@ func (h *RouteHandler) Login(c *gin.Context) {
 
 	token, err := h.services.User.Login(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		switch {
+		case errors.Is(err, service.ErrInvalidEmail):
+		case errors.Is(err, service.ErrInvalidPassword):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured during login"})
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
@@ -30,6 +52,18 @@ func (h *RouteHandler) Login(c *gin.Context) {
 
 func (h *RouteHandler) Logout(c *gin.Context) {}
 
-func (h *RouteHandler) GetProfile(c *gin.Context) {}
+func (h *RouteHandler) GetProfile(c *gin.Context) {
+	uid, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
+		return
+	}
+	userID := uid.(int32)
 
-func (h *RouteHandler) UpdateProfile(c *gin.Context) {}
+	user, err := h.services.User.GetProfile(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user profile"})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}

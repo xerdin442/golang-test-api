@@ -20,6 +20,11 @@ func NewUserService(r repo.UserRepoInterface) *UserService {
 }
 
 func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest) (database.User, error) {
+	user, _ := s.repo.GetUserByEmail(ctx, dto.Email)
+	if user.Email == dto.Email {
+		return database.User{}, ErrEmailAlreadyExists
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return database.User{}, err
@@ -43,13 +48,13 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest) (databa
 func (s *UserService) Login(ctx context.Context, dto dto.LoginRequest) (string, error) {
 	user, err := s.repo.GetUserByEmail(ctx, dto.Email)
 	if err != nil {
-		return "", errors.New("Invalid email address")
+		return "", ErrInvalidEmail
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(dto.Password)); err != nil {
 		switch {
 		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
-			return "", errors.New("Invalid password")
+			return "", ErrInvalidPassword
 
 		default:
 			return "", err
@@ -61,4 +66,8 @@ func (s *UserService) Login(ctx context.Context, dto dto.LoginRequest) (string, 
 
 func (s *UserService) Logout(ctx context.Context, userID int32) error {
 	return nil
+}
+
+func (s *UserService) GetProfile(ctx context.Context, userID int32) (database.User, error) {
+	return s.repo.GetUserByID(ctx, userID)
 }

@@ -25,17 +25,24 @@ func (app *application) routes() http.Handler {
 	{
 		users.POST("/logout", h.Logout)
 		users.GET("/profile", h.GetProfile)
-		users.PUT("/profile", h.UpdateProfile)
 	}
 
 	events := v1.Group("/events")
 	events.Use(middleware.AuthMiddleware())
 	{
 		events.POST("/", h.CreateEvent)
-		events.GET("/")
-		events.GET("/:id")
-		events.PUT("/:id")
-		events.DELETE("/:id")
+		events.GET("/", h.GetEvent)
+		events.GET("/:id", h.ListEvents)
+		events.PUT("/:id", h.UpdateEvent)
+		events.DELETE("/:id", h.DeleteEvent)
+	}
+
+	attendees := v1.Group("/events/:id/attendees")
+	attendees.Use(middleware.AuthMiddleware())
+	{
+		attendees.GET("/", h.GetEventAttendees)
+		attendees.POST("/rsvp", h.ReserveTicket)
+		attendees.POST("/revoke", h.RevokeTicket)
 	}
 
 	return r

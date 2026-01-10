@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
@@ -19,7 +18,7 @@ func NewEventService(r repo.EventRepoInterface) *EventService {
 	return &EventService{repo: r}
 }
 
-func (s *EventService) CreateEvent(ctx context.Context, dto dto.EventRequest, userID int32) (database.Event, error) {
+func (s *EventService) CreateEvent(ctx context.Context, dto dto.CreateEventRequest, userID int32) (database.Event, error) {
 	if dto.Datetime.Before(time.Now()) {
 		return database.Event{}, ErrInvalidDate
 	}
@@ -41,14 +40,14 @@ func (s *EventService) CreateEvent(ctx context.Context, dto dto.EventRequest, us
 	return s.repo.GetEvent(ctx, int32(eventID))
 }
 
-func (s *EventService) UpdateEvent(ctx context.Context, dto dto.EventRequest, eventID, userID int32) (database.Event, error) {
+func (s *EventService) UpdateEvent(ctx context.Context, dto dto.UpdateEventRequest, eventID, userID int32) (database.Event, error) {
 	if dto.Datetime.Before(time.Now()) {
 		return database.Event{}, ErrInvalidDate
 	}
 
 	event, _ := s.repo.GetEvent(ctx, eventID)
 	if event.OwnerID != userID {
-		return database.Event{}, errors.New("An event can only be updated by the owner")
+		return database.Event{}, ErrOwnerRestrictedAction
 	}
 
 	arg := database.UpdateEventParams{
@@ -90,7 +89,7 @@ func (s *EventService) GetEvent(ctx context.Context, eventID int32) (database.Ev
 func (s *EventService) DeleteEvent(ctx context.Context, eventID, userID int32) error {
 	event, _ := s.repo.GetEvent(ctx, eventID)
 	if event.OwnerID != userID {
-		return errors.New("An event can only be deleted by the owner")
+		return ErrOwnerRestrictedAction
 	}
 
 	if err := s.repo.DeleteEvent(ctx, eventID); err != nil {
@@ -98,4 +97,40 @@ func (s *EventService) DeleteEvent(ctx context.Context, eventID, userID int32) e
 	}
 
 	return nil
+}
+
+func (s *EventService) ReserveTicket(ctx context.Context, userID, eventID int32) error {
+	args := database.AddAttendeeParams{
+		UserID:  userID,
+		EventID: int32(eventID),
+	}
+
+	_, err := s.repo.AddAttendee(ctx, args)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *EventService) RevokeTicket(ctx context.Context, userID, eventID int32) error {
+	args := database.RemoveAttendeeParams{
+		UserID:  userID,
+		EventID: int32(eventID),
+	}
+
+	if err := s.repo.RemoveAttendee(ctx, args); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *EventService) GetEventAttendees(ctx context.Context, userID, eventID int32) ([]database.GetEventAttendeesRow, error) {
+	event, _ := s.repo.GetEvent(ctx, eventID)
+	if event.OwnerID != userID {
+		return []database.GetEventAttendeesRow{}, ErrOwnerRestrictedAction
+	}
+
+	return s.repo.GetEventAttendees(ctx, eventID)
 }

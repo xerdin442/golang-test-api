@@ -18,7 +18,7 @@ func (h *RouteHandler) CreateEvent(c *gin.Context) {
 	}
 	userID := uid.(int32)
 
-	var req dto.EventRequest
+	var req dto.CreateEventRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
@@ -47,9 +47,12 @@ func (h *RouteHandler) UpdateEvent(c *gin.Context) {
 	}
 	userID := uid.(int32)
 
-	eventID, _ := strconv.ParseInt(c.Param("id"), 10, 32)
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+	}
 
-	var req dto.EventRequest
+	var req dto.UpdateEventRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	}
@@ -59,6 +62,9 @@ func (h *RouteHandler) UpdateEvent(c *gin.Context) {
 		switch {
 		case errors.Is(err, service.ErrInvalidDate):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		case errors.Is(err, service.ErrOwnerRestrictedAction):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update event"})
@@ -81,7 +87,10 @@ func (h *RouteHandler) ListEvents(c *gin.Context) {
 }
 
 func (h *RouteHandler) GetEvent(c *gin.Context) {
-	eventID, _ := strconv.ParseInt(c.Param("id"), 10, 32)
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+	}
 
 	event, err := h.services.Event.GetEvent(c.Request.Context(), int32(eventID))
 	if err != nil {
@@ -100,13 +109,86 @@ func (h *RouteHandler) DeleteEvent(c *gin.Context) {
 	}
 	userID := uid.(int32)
 
-	eventID, _ := strconv.ParseInt(c.Param("id"), 10, 32)
-
-	err := h.services.Event.DeleteEvent(c.Request.Context(), int32(eventID), userID)
+	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete event"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+	}
+
+	if err := h.services.Event.DeleteEvent(c.Request.Context(), int32(eventID), userID); err != nil {
+		switch {
+		case errors.Is(err, service.ErrOwnerRestrictedAction):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete event"})
+		}
+
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Event deleted successfully"})
+}
+
+func (h *RouteHandler) ReserveTicket(c *gin.Context) {
+	uid, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
+		return
+	}
+	userID := uid.(int32)
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+	}
+
+	if err := h.services.Event.ReserveTicket(c.Request.Context(), userID, int32(eventID)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reserve event ticket"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Event ticket reserved successfully"})
+}
+
+func (h *RouteHandler) RevokeTicket(c *gin.Context) {
+	uid, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
+		return
+	}
+	userID := uid.(int32)
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+	}
+
+	if err := h.services.Event.RevokeTicket(c.Request.Context(), userID, int32(eventID)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to revoke event ticket"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Event ticket revoked successfully"})
+}
+
+func (h *RouteHandler) GetEventAttendees(c *gin.Context) {
+	uid, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
+		return
+	}
+	userID := uid.(int32)
+
+	eventID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+	}
+
+	attendees, err := h.services.Event.GetEventAttendees(c.Request.Context(), userID, int32(eventID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch event attendees"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"attendees": attendees})
 }
