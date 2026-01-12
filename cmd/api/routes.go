@@ -2,7 +2,9 @@ package main
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/xerdin442/api-practice/internal/api/handlers"
 	"github.com/xerdin442/api-practice/internal/api/middleware"
@@ -11,6 +13,16 @@ import (
 func (app *application) routes() http.Handler {
 	r := gin.Default()
 	h := handlers.New(app.services, app.cache)
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
+	r.Use(middleware.RateLimiter())
 
 	v1 := r.Group("api/v1")
 
