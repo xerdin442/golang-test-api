@@ -18,21 +18,21 @@ func (app *application) routes() http.Handler {
 	{
 		auth.POST("/signup", h.Signup)
 		auth.POST("/login", h.Login)
+		auth.POST("/logout", middleware.AuthMiddleware(app.cache), h.Logout)
 	}
 
 	users := v1.Group("/users")
 	users.Use(middleware.AuthMiddleware(app.cache))
 	{
-		users.POST("/logout", h.Logout)
 		users.GET("/profile", h.GetProfile)
 	}
 
 	events := v1.Group("/events")
 	events.Use(middleware.AuthMiddleware(app.cache))
 	{
-		events.POST("/", h.CreateEvent)
-		events.GET("/", h.GetEvent)
-		events.GET("/:id", h.ListEvents)
+		events.POST("", h.CreateEvent)
+		events.GET("/:id", h.GetEvent)
+		events.GET("", h.ListEvents)
 		events.PUT("/:id", h.UpdateEvent)
 		events.DELETE("/:id", h.DeleteEvent)
 	}

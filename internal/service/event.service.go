@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
@@ -45,7 +47,10 @@ func (s *EventService) UpdateEvent(ctx context.Context, dto dto.UpdateEventReque
 		return database.Event{}, ErrInvalidDate
 	}
 
-	event, _ := s.repo.GetEvent(ctx, eventID)
+	event, err := s.repo.GetEvent(ctx, eventID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return database.Event{}, ErrEventNotFound
+	}
 	if event.OwnerID != userID {
 		return database.Event{}, ErrOwnerRestrictedAction
 	}
@@ -80,6 +85,10 @@ func (s *EventService) ListEvents(ctx context.Context) ([]database.Event, error)
 func (s *EventService) GetEvent(ctx context.Context, eventID int32) (database.Event, error) {
 	result, err := s.repo.GetEvent(ctx, eventID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return database.Event{}, ErrEventNotFound
+		}
+
 		return database.Event{}, err
 	}
 
@@ -87,7 +96,10 @@ func (s *EventService) GetEvent(ctx context.Context, eventID int32) (database.Ev
 }
 
 func (s *EventService) DeleteEvent(ctx context.Context, eventID, userID int32) error {
-	event, _ := s.repo.GetEvent(ctx, eventID)
+	event, err := s.repo.GetEvent(ctx, eventID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrEventNotFound
+	}
 	if event.OwnerID != userID {
 		return ErrOwnerRestrictedAction
 	}
@@ -127,7 +139,10 @@ func (s *EventService) RevokeTicket(ctx context.Context, userID, eventID int32) 
 }
 
 func (s *EventService) GetEventAttendees(ctx context.Context, userID, eventID int32) ([]database.GetEventAttendeesRow, error) {
-	event, _ := s.repo.GetEvent(ctx, eventID)
+	event, err := s.repo.GetEvent(ctx, eventID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return []database.GetEventAttendeesRow{}, ErrEventNotFound
+	}
 	if event.OwnerID != userID {
 		return []database.GetEventAttendeesRow{}, ErrOwnerRestrictedAction
 	}

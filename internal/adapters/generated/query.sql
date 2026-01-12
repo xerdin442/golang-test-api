@@ -78,7 +78,6 @@ WHERE
 
 -- name: GetEventAttendees :many
 SELECT
-  u.id,
   u.name,
   u.email
 FROM

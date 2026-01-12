@@ -107,7 +107,6 @@ func (q *Queries) GetEvent(ctx context.Context, id int32) (Event, error) {
 
 const getEventAttendees = `-- name: GetEventAttendees :many
 SELECT
-  u.id,
   u.name,
   u.email
 FROM
@@ -118,7 +117,6 @@ WHERE
 `
 
 type GetEventAttendeesRow struct {
-	ID    int32  `json:"id"`
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
@@ -132,7 +130,7 @@ func (q *Queries) GetEventAttendees(ctx context.Context, eventID int32) ([]GetEv
 	var items []GetEventAttendeesRow
 	for rows.Next() {
 		var i GetEventAttendeesRow
-		if err := rows.Scan(&i.ID, &i.Name, &i.Email); err != nil {
+		if err := rows.Scan(&i.Name, &i.Email); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

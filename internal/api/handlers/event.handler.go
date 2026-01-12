@@ -63,7 +63,7 @@ func (h *RouteHandler) UpdateEvent(c *gin.Context) {
 	event, err := h.services.Event.UpdateEvent(c.Request.Context(), req, int32(eventID), userID)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrInvalidDate):
+		case errors.Is(err, service.ErrInvalidDate), errors.Is(err, service.ErrEventNotFound):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		case errors.Is(err, service.ErrOwnerRestrictedAction):
@@ -98,7 +98,14 @@ func (h *RouteHandler) GetEvent(c *gin.Context) {
 
 	event, err := h.services.Event.GetEvent(c.Request.Context(), int32(eventID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch event by ID"})
+		switch {
+		case errors.Is(err, service.ErrEventNotFound):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch event by ID"})
+		}
+
 		return
 	}
 
@@ -121,6 +128,9 @@ func (h *RouteHandler) DeleteEvent(c *gin.Context) {
 
 	if err := h.services.Event.DeleteEvent(c.Request.Context(), int32(eventID), userID); err != nil {
 		switch {
+		case errors.Is(err, service.ErrEventNotFound):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
 		case errors.Is(err, service.ErrOwnerRestrictedAction):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 
@@ -194,7 +204,17 @@ func (h *RouteHandler) GetEventAttendees(c *gin.Context) {
 
 	attendees, err := h.services.Event.GetEventAttendees(c.Request.Context(), userID, int32(eventID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch event attendees"})
+		switch {
+		case errors.Is(err, service.ErrEventNotFound):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		case errors.Is(err, service.ErrOwnerRestrictedAction):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch event attendees"})
+		}
+
 		return
 	}
 
