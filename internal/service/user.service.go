@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
@@ -47,7 +48,7 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest) (databa
 
 func (s *UserService) Login(ctx context.Context, dto dto.LoginRequest) (string, error) {
 	user, err := s.repo.GetUserByEmail(ctx, dto.Email)
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrInvalidEmail
 	}
 

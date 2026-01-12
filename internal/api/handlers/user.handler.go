@@ -15,6 +15,7 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 	var req dto.SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	user, err := h.services.User.Signup(c.Request.Context(), req)
@@ -26,6 +27,8 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured during signup"})
 		}
+
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"user": user})
@@ -35,18 +38,20 @@ func (h *RouteHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	token, err := h.services.User.Login(c.Request.Context(), req)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrInvalidEmail):
-		case errors.Is(err, service.ErrInvalidPassword):
+		case errors.Is(err, service.ErrInvalidEmail), errors.Is(err, service.ErrInvalidPassword):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured during login"})
 		}
+
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
@@ -79,6 +84,7 @@ func (h *RouteHandler) GetProfile(c *gin.Context) {
 	user, err := h.services.User.GetProfile(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user profile"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"user": user})

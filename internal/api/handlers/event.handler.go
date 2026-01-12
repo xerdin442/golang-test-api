@@ -21,6 +21,7 @@ func (h *RouteHandler) CreateEvent(c *gin.Context) {
 	var req dto.CreateEventRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	event, err := h.services.Event.CreateEvent(c.Request.Context(), req, userID)
@@ -50,11 +51,13 @@ func (h *RouteHandler) UpdateEvent(c *gin.Context) {
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+		return
 	}
 
 	var req dto.UpdateEventRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	event, err := h.services.Event.UpdateEvent(c.Request.Context(), req, int32(eventID), userID)
@@ -90,6 +93,7 @@ func (h *RouteHandler) GetEvent(c *gin.Context) {
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+		return
 	}
 
 	event, err := h.services.Event.GetEvent(c.Request.Context(), int32(eventID))
@@ -112,6 +116,7 @@ func (h *RouteHandler) DeleteEvent(c *gin.Context) {
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+		return
 	}
 
 	if err := h.services.Event.DeleteEvent(c.Request.Context(), int32(eventID), userID); err != nil {
@@ -140,6 +145,7 @@ func (h *RouteHandler) ReserveTicket(c *gin.Context) {
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+		return
 	}
 
 	if err := h.services.Event.ReserveTicket(c.Request.Context(), userID, int32(eventID)); err != nil {
@@ -161,6 +167,7 @@ func (h *RouteHandler) RevokeTicket(c *gin.Context) {
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+		return
 	}
 
 	if err := h.services.Event.RevokeTicket(c.Request.Context(), userID, int32(eventID)); err != nil {
@@ -182,6 +189,7 @@ func (h *RouteHandler) GetEventAttendees(c *gin.Context) {
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+		return
 	}
 
 	attendees, err := h.services.Event.GetEventAttendees(c.Request.Context(), userID, int32(eventID))
