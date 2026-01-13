@@ -7,19 +7,26 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 	"github.com/xerdin442/api-practice/internal/api/dto"
 	"github.com/xerdin442/api-practice/internal/service"
 )
 
 func (h *RouteHandler) Signup(c *gin.Context) {
+	logger := log.Ctx(c.Request.Context())
+
 	var req dto.SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Signup error")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
 		return
 	}
 
 	user, err := h.services.User.Signup(c.Request.Context(), req)
 	if err != nil {
+		logger.Error().Err(err).Msg("Signup error")
+
 		switch {
 		case errors.Is(err, service.ErrEmailAlreadyExists):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -31,18 +38,25 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 		return
 	}
 
+	logger.Info().Msg("Signup successful!")
 	c.JSON(http.StatusCreated, gin.H{"user": user})
 }
 
 func (h *RouteHandler) Login(c *gin.Context) {
+	logger := log.Ctx(c.Request.Context())
+
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error().Err(err).Msg("Login error")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
 		return
 	}
 
 	token, err := h.services.User.Login(c.Request.Context(), req)
 	if err != nil {
+		logger.Error().Err(err).Msg("Login error")
+
 		switch {
 		case errors.Is(err, service.ErrInvalidEmail), errors.Is(err, service.ErrInvalidPassword):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -58,6 +72,8 @@ func (h *RouteHandler) Login(c *gin.Context) {
 }
 
 func (h *RouteHandler) Logout(c *gin.Context) {
+	logger := log.Ctx(c.Request.Context())
+
 	authHeader := c.GetHeader("Authorization")
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
@@ -66,7 +82,9 @@ func (h *RouteHandler) Logout(c *gin.Context) {
 
 	err := h.cache.SetJTI(c.Request.Context(), tokenString, "blacklisted", tokenExp)
 	if err != nil {
+		logger.Error().Err(err).Msg("Logout error")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token blacklist error"})
+
 		return
 	}
 
@@ -74,16 +92,15 @@ func (h *RouteHandler) Logout(c *gin.Context) {
 }
 
 func (h *RouteHandler) GetProfile(c *gin.Context) {
-	uid, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
-		return
-	}
-	userID := uid.(int32)
+	logger := log.Ctx(c.Request.Context())
+
+	userID := c.MustGet("userID").(int32)
 
 	user, err := h.services.User.GetProfile(c.Request.Context(), userID)
 	if err != nil {
+		logger.Error().Err(err).Msg("User profile fetch error")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user profile"})
+
 		return
 	}
 

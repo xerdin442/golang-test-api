@@ -11,12 +11,7 @@ import (
 )
 
 func (h *RouteHandler) CreateEvent(c *gin.Context) {
-	uid, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
-		return
-	}
-	userID := uid.(int32)
+	userID := c.MustGet("userID").(int32)
 
 	var req dto.CreateEventRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -41,12 +36,7 @@ func (h *RouteHandler) CreateEvent(c *gin.Context) {
 }
 
 func (h *RouteHandler) UpdateEvent(c *gin.Context) {
-	uid, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
-		return
-	}
-	userID := uid.(int32)
+	userID := c.MustGet("userID").(int32)
 
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -113,12 +103,7 @@ func (h *RouteHandler) GetEvent(c *gin.Context) {
 }
 
 func (h *RouteHandler) DeleteEvent(c *gin.Context) {
-	uid, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
-		return
-	}
-	userID := uid.(int32)
+	userID := c.MustGet("userID").(int32)
 
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -145,12 +130,7 @@ func (h *RouteHandler) DeleteEvent(c *gin.Context) {
 }
 
 func (h *RouteHandler) ReserveTicket(c *gin.Context) {
-	uid, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
-		return
-	}
-	userID := uid.(int32)
+	userID := c.MustGet("userID").(int32)
 
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -167,12 +147,7 @@ func (h *RouteHandler) ReserveTicket(c *gin.Context) {
 }
 
 func (h *RouteHandler) RevokeTicket(c *gin.Context) {
-	uid, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
-		return
-	}
-	userID := uid.(int32)
+	userID := c.MustGet("userID").(int32)
 
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -189,12 +164,7 @@ func (h *RouteHandler) RevokeTicket(c *gin.Context) {
 }
 
 func (h *RouteHandler) GetEventAttendees(c *gin.Context) {
-	uid, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Context missing user info"})
-		return
-	}
-	userID := uid.(int32)
+	userID := c.MustGet("userID").(int32)
 
 	eventID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

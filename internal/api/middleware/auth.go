@@ -32,7 +32,7 @@ func GenerateToken(userID int32) (string, error) {
 	return token.SignedString(secretKey)
 }
 
-func AuthMiddleware(cache *cache.Redis) gin.HandlerFunc {
+func JwtGuard(cache *cache.Redis) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {

@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 func (app *application) serve() error {
@@ -16,6 +17,6 @@ func (app *application) serve() error {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	log.Printf("Starting server on port %d...", app.port)
+	log.Info().Msgf("Starting server on port %d...", app.port)
 	return server.ListenAndServe()
 }

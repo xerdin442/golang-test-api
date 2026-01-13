@@ -1,16 +1,17 @@
 package env
 
 import (
-	"log"
 	"os"
 	"strconv"
+
+	"github.com/rs/zerolog/log"
 )
 
 func GetStr(key string) string {
 	value := os.Getenv(key)
 
 	if value == "" {
-		log.Fatalf("Missing environment variable: %s", key)
+		log.Fatal().Msgf("Missing environment variable: %s", key)
 	}
 
 	return value
@@ -21,7 +22,7 @@ func GetInt(key string) int {
 
 	intValue, err := strconv.ParseInt(strValue, 10, 0)
 	if err != nil {
-		log.Fatal("Invalid string value", err)
+		log.Fatal().Err(err).Msg("Invalid string value")
 	}
 
 	return int(intValue)
