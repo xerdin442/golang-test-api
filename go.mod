@@ -37,6 +37,7 @@ require (
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.54.0 // indirect
+	github.com/resend/resend-go/v2 v2.28.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect

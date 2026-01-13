@@ -38,7 +38,7 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 		return
 	}
 
-	logger.Info().Msg("Signup successful!")
+	logger.Info().Str("email", req.Email).Msg("Signup successful")
 	c.JSON(http.StatusCreated, gin.H{"user": user})
 }
 
@@ -68,6 +68,7 @@ func (h *RouteHandler) Login(c *gin.Context) {
 		return
 	}
 
+	logger.Info().Str("email", req.Email).Msg("Login successful")
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
@@ -88,6 +89,7 @@ func (h *RouteHandler) Logout(c *gin.Context) {
 		return
 	}
 
+	logger.Info().Msg("Logout successful")
 	c.JSON(200, gin.H{"message": "Logged out!"})
 }
 

@@ -16,6 +16,7 @@ func CustomRequestLogger() gin.HandlerFunc {
 
 		// Generate and attach a request ID to the request context
 		reqID := uuid.New().String()
+		c.Header("X-Request-ID", reqID)
 		ctx := log.With().Str("id", reqID).Logger().WithContext(c.Request.Context())
 		c.Request = c.Request.WithContext(ctx)
 
