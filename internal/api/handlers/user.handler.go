@@ -23,7 +23,7 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 		return
 	}
 
-	user, err := h.services.User.Signup(c.Request.Context(), req)
+	user, err := h.services.User.Signup(c.Request.Context(), req, h.tasksQueue)
 	if err != nil {
 		logger.Error().Err(err).Msg("Signup error")
 

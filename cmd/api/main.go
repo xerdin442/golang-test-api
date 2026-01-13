@@ -6,6 +6,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/hibiken/asynq"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -16,9 +17,10 @@ import (
 )
 
 type application struct {
-	port     int
-	services *service.Manager
-	cache    *cache.Redis
+	port       int
+	services   *service.Manager
+	cache      *cache.Redis
+	tasksQueue *asynq.Client
 }
 
 func main() {
@@ -47,10 +49,16 @@ func main() {
 	registry := repo.NewRegistry(db)
 	services := service.NewManager(registry)
 
+	// Initialize task queue
+	tasksQueue := asynq.NewClient(
+		asynq.RedisClientOpt{Addr: env.GetStr("REDIS_ADDR"), Password: env.GetStr("REDIS_PASSWORD")},
+	)
+
 	app := &application{
-		port:     env.GetInt("PORT"),
-		services: services,
-		cache:    cache,
+		port:       env.GetInt("PORT"),
+		services:   services,
+		cache:      cache,
+		tasksQueue: tasksQueue,
 	}
 
 	// Start the http server

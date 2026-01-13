@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"errors"
 
+	"github.com/hibiken/asynq"
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
 	"github.com/xerdin442/api-practice/internal/api/dto"
 	"github.com/xerdin442/api-practice/internal/api/middleware"
+	"github.com/xerdin442/api-practice/internal/env"
 	repo "github.com/xerdin442/api-practice/internal/repository"
+	"github.com/xerdin442/api-practice/internal/tasks"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,7 +23,7 @@ func NewUserService(r repo.UserRepoInterface) *UserService {
 	return &UserService{repo: r}
 }
 
-func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest) (database.User, error) {
+func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *asynq.Client) (database.User, error) {
 	user, _ := s.repo.GetUserByEmail(ctx, dto.Email)
 	if user.Email == dto.Email {
 		return database.User{}, ErrEmailAlreadyExists
@@ -41,6 +44,24 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest) (databa
 	if err != nil {
 		return database.User{}, err
 	}
+
+	// Parse email template
+	templateData := &tasks.OnboardingTemplateData{
+		Name:    dto.Name,
+		Company: env.GetStr("APP_NAME"),
+	}
+	content, _ := tasks.ParseEmailTemplate(templateData, "templates/onboarding.html")
+
+	// Configure email payload
+	payload := &tasks.EmailPayload{
+		Recipient: dto.Email,
+		Subject:   "Welcome Onboard!",
+		Content:   content,
+	}
+
+	// Send onboarding email to new user
+	task, _ := tasks.NewEmailTask(payload)
+	_, err = queue.Enqueue(task)
 
 	userID, _ := result.LastInsertId()
 	return s.repo.GetUserByID(ctx, int32(userID))

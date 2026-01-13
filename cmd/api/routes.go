@@ -26,7 +26,7 @@ func (app *application) routes() http.Handler {
 	r.Use(middleware.RateLimiter())
 
 	v1 := r.Group("api/v1")
-	h := handlers.New(app.services, app.cache)
+	h := handlers.New(app.services, app.cache, app.tasksQueue)
 
 	auth := v1.Group("/auth")
 	{

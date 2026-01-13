@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	_ "github.com/joho/godotenv/autoload"
 	"github.com/xerdin442/api-practice/internal/cache"
 	"github.com/xerdin442/api-practice/internal/env"
 )
