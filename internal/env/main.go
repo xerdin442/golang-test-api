@@ -20,7 +20,7 @@ func GetStr(key string) string {
 func GetInt(key string) int {
 	strValue := GetStr(key)
 
-	intValue, err := strconv.ParseInt(strValue, 10, 0)
+	intValue, err := strconv.ParseInt(strValue, 10, 64)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Invalid string value")
 	}

@@ -3,8 +3,8 @@ package repo
 import "database/sql"
 
 type Registry struct {
-	Event EventRepoInterface
-	User  UserRepoInterface
+	Event EventRepo
+	User  UserRepo
 }
 
 func NewRegistry(db *sql.DB) *Registry {

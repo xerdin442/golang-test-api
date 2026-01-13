@@ -7,7 +7,7 @@ import (
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
 )
 
-type EventRepoInterface interface {
+type EventRepo interface {
 	CreateEvent(ctx context.Context, arg database.CreateEventParams) (sql.Result, error)
 	GetEvent(ctx context.Context, id int32) (database.Event, error)
 	UpdateEvent(ctx context.Context, arg database.UpdateEventParams) (sql.Result, error)
@@ -18,11 +18,6 @@ type EventRepoInterface interface {
 	GetEventAttendees(ctx context.Context, eventID int32) ([]database.GetEventAttendeesRow, error)
 }
 
-type EventRepo struct {
-	q *database.Queries
-}
-
-func NewEventRepository(db *sql.DB) EventRepoInterface {
-	repo := EventRepo{q: database.New(db)}
-	return repo.q
+func NewEventRepository(db *sql.DB) EventRepo {
+	return database.New(db)
 }

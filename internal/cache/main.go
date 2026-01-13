@@ -27,5 +27,6 @@ func (r *Redis) IsBlacklisted(ctx context.Context, token string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return n > 0, nil
 }

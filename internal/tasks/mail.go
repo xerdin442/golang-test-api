@@ -62,6 +62,6 @@ func HandleEmailTask(ctx context.Context, t *asynq.Task) error {
 		return err
 	}
 
-	log.Info().Msgf("Welcome email sent to %s", p.Recipient)
+	log.Info().Msgf("Onboarding email sent to %s", p.Recipient)
 	return nil
 }

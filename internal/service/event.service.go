@@ -13,10 +13,10 @@ import (
 )
 
 type EventService struct {
-	repo repo.EventRepoInterface
+	repo repo.EventRepo
 }
 
-func NewEventService(r repo.EventRepoInterface) *EventService {
+func NewEventService(r repo.EventRepo) *EventService {
 	return &EventService{repo: r}
 }
 
