@@ -1,17 +1,16 @@
-package mailer
+package tasks
 
 import (
 	"bytes"
 	"context"
-	"embed"
 	"encoding/json"
 	"fmt"
-	"html/template"
 
 	"github.com/hibiken/asynq"
 	"github.com/resend/resend-go/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/xerdin442/api-practice/internal/env"
+	"github.com/xerdin442/api-practice/internal/util"
 )
 
 type EmailPayload struct {
@@ -25,11 +24,8 @@ type OnboardingTemplateData struct {
 	Company string `json:"company"`
 }
 
-//go:embed templates/*.html
-var templateFS embed.FS
-
 func ParseEmailTemplate(data any, templateName string) (string, error) {
-	tmpl, err := template.ParseFS(templateFS, "templates/"+templateName)
+	tmpl, err := util.FetchTemplateFile(templateName)
 	if err != nil {
 		return "", err
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/xerdin442/api-practice/internal/api/middleware"
 	"github.com/xerdin442/api-practice/internal/env"
 	repo "github.com/xerdin442/api-practice/internal/repository"
-	"github.com/xerdin442/api-practice/internal/tasks/mailer"
+	"github.com/xerdin442/api-practice/internal/tasks"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -46,21 +46,21 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 	}
 
 	// Parse email template
-	templateData := &mailer.OnboardingTemplateData{
+	templateData := &tasks.OnboardingTemplateData{
 		Name:    dto.Name,
 		Company: env.GetStr("APP_NAME"),
 	}
-	content, _ := mailer.ParseEmailTemplate(templateData, "onboarding.html")
+	content, _ := tasks.ParseEmailTemplate(templateData, "onboarding.html")
 
 	// Configure email payload
-	payload := &mailer.EmailPayload{
+	payload := &tasks.EmailPayload{
 		Recipient: dto.Email,
 		Subject:   "Welcome Onboard!",
 		Content:   content,
 	}
 
 	// Send onboarding email to new user
-	task, _ := mailer.NewEmailTask(payload)
+	task, _ := tasks.NewEmailTask(payload)
 	_, err = queue.Enqueue(task)
 
 	userID, _ := result.LastInsertId()
