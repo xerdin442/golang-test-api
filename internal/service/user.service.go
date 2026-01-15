@@ -12,6 +12,7 @@ import (
 	"github.com/xerdin442/api-practice/internal/env"
 	repo "github.com/xerdin442/api-practice/internal/repository"
 	"github.com/xerdin442/api-practice/internal/tasks"
+	"github.com/xerdin442/api-practice/internal/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -50,7 +51,7 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 		Name:    dto.Name,
 		Company: env.GetStr("APP_NAME"),
 	}
-	content, _ := tasks.ParseEmailTemplate(templateData, "onboarding.html")
+	content, _ := util.ParseEmailTemplate(templateData, "onboarding.html")
 
 	// Configure email payload
 	payload := &tasks.EmailPayload{

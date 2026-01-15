@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"github.com/resend/resend-go/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/xerdin442/api-practice/internal/env"
-	"github.com/xerdin442/api-practice/internal/util"
 )
 
 type EmailPayload struct {
@@ -22,20 +20,6 @@ type EmailPayload struct {
 type OnboardingTemplateData struct {
 	Name    string `json:"name"`
 	Company string `json:"company"`
-}
-
-func ParseEmailTemplate(data any, templateName string) (string, error) {
-	tmpl, err := util.FetchTemplateFile(templateName)
-	if err != nil {
-		return "", err
-	}
-
-	var tpl bytes.Buffer
-	if err := tmpl.Execute(&tpl, data); err != nil {
-		return "", err
-	}
-
-	return tpl.String(), nil
 }
 
 func NewEmailTask(data *EmailPayload) (*asynq.Task, error) {
