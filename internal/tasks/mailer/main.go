@@ -1,8 +1,9 @@
-package tasks
+package mailer
 
 import (
 	"bytes"
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -24,8 +25,11 @@ type OnboardingTemplateData struct {
 	Company string `json:"company"`
 }
 
-func ParseEmailTemplate(data any, filePath string) (string, error) {
-	tmpl, err := template.ParseFiles(filePath)
+//go:embed templates/*.html
+var templateFS embed.FS
+
+func ParseEmailTemplate(data any, templateName string) (string, error) {
+	tmpl, err := template.ParseFS(templateFS, "templates/"+templateName)
 	if err != nil {
 		return "", err
 	}

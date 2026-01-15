@@ -5,7 +5,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog/log"
 	"github.com/xerdin442/api-practice/internal/env"
-	"github.com/xerdin442/api-practice/internal/tasks"
+	"github.com/xerdin442/api-practice/internal/tasks/mailer"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	)
 
 	mux := asynq.NewServeMux()
-	mux.HandleFunc("email_queue", tasks.HandleEmailTask)
+	mux.HandleFunc("email_queue", mailer.HandleEmailTask)
 
 	if err := srv.Run(mux); err != nil {
 		log.Fatal().Err(err).Msg("Worker initialization failed")
