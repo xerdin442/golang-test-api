@@ -43,9 +43,10 @@ func HandleEmailTask(ctx context.Context, t *asynq.Task) error {
 
 	_, err := resendClient.Emails.Send(params)
 	if err != nil {
+		log.Error().Err(err).Msgf("Error occured while sending %s email to %s", p.Subject, p.Recipient)
 		return err
 	}
 
-	log.Info().Msgf("Onboarding email sent to %s", p.Recipient)
+	log.Info().Msgf("%s email sent to %s", p.Subject, p.Recipient)
 	return nil
 }
