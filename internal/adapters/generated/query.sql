@@ -40,9 +40,9 @@ WHERE
 
 -- name: CreateUser :execresult
 INSERT INTO
-  users (name, email, password)
+  users (name, email, password, profile_image)
 VALUES
-  (?, ?, ?);
+  (?, ?, ?, ?);
 
 -- name: GetUserByID :one
 SELECT
@@ -52,7 +52,7 @@ FROM
 WHERE
   id = ?
 LIMIT
-  1;  
+  1;
 
 -- name: GetUserByEmail :one
 SELECT
@@ -62,7 +62,7 @@ FROM
 WHERE
   email = ?
 LIMIT
-  1;  
+  1;
 
 -- name: AddAttendee :execresult
 INSERT INTO

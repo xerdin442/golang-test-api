@@ -30,17 +30,46 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 		return database.User{}, ErrEmailAlreadyExists
 	}
 
+	// Generate password hash
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return database.User{}, err
 	}
 
+	// Process file upload
+	var profileImage string
+	if dto.ProfileImage == nil {
+		profileImage = env.GetStr("DEFAULT_PROFILE_IMAGE")
+	} else {
+		file, _ := dto.ProfileImage.Open()
+		defer file.Close()
+
+		// Validate file MIME type
+		err := util.ParseImageMimetype(file)
+		if err != nil {
+			return database.User{}, ErrUnsupportedImageType
+		}
+
+		// Upload file to Cloudinary
+		uploadResult, err := util.ProcessFileUpload(file, "profile_images")
+		if err != nil {
+			return database.User{}, ErrFileUploadFailed
+		}
+
+		profileImage = uploadResult.SecureURL
+	}
+
+	// Configure database query params
 	args := database.CreateUserParams{
 		Name:     dto.Name,
 		Email:    dto.Email,
 		Password: string(hashedPassword),
+		ProfileImage: sql.NullString{
+			String: profileImage,
+		},
 	}
 
+	// Create new user
 	result, err := s.repo.CreateUser(ctx, args)
 	if err != nil {
 		return database.User{}, err

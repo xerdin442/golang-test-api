@@ -5,6 +5,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -24,8 +25,9 @@ type Event struct {
 }
 
 type User struct {
-	ID       int32  `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID           int32          `json:"id"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Password     string         `json:"password"`
+	ProfileImage sql.NullString `json:"profile_image"`
 }

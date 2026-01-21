@@ -54,19 +54,25 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (sql.R
 
 const createUser = `-- name: CreateUser :execresult
 INSERT INTO
-  users (name, email, password)
+  users (name, email, password, profile_image)
 VALUES
-  (?, ?, ?)
+  (?, ?, ?, ?)
 `
 
 type CreateUserParams struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Password     string         `json:"password"`
+	ProfileImage sql.NullString `json:"profile_image"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createUser, arg.Name, arg.Email, arg.Password)
+	return q.db.ExecContext(ctx, createUser,
+		arg.Name,
+		arg.Email,
+		arg.Password,
+		arg.ProfileImage,
+	)
 }
 
 const deleteEvent = `-- name: DeleteEvent :exec
@@ -146,7 +152,7 @@ func (q *Queries) GetEventAttendees(ctx context.Context, eventID int32) ([]GetEv
 
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT
-  id, name, email, password
+  id, name, email, password, profile_image
 FROM
   users
 WHERE
@@ -163,13 +169,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Name,
 		&i.Email,
 		&i.Password,
+		&i.ProfileImage,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
 SELECT
-  id, name, email, password
+  id, name, email, password, profile_image
 FROM
   users
 WHERE
@@ -186,6 +193,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
 		&i.Name,
 		&i.Email,
 		&i.Password,
+		&i.ProfileImage,
 	)
 	return i, err
 }

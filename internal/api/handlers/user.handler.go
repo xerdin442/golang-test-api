@@ -16,7 +16,7 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 	logger := log.Ctx(c.Request.Context())
 
 	var req dto.SignupRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		logger.Error().Err(err).Msg("Signup error")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
@@ -28,8 +28,11 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 		logger.Error().Err(err).Msg("Signup error")
 
 		switch {
-		case errors.Is(err, service.ErrEmailAlreadyExists):
+		case errors.Is(err, service.ErrEmailAlreadyExists), errors.Is(err, service.ErrFileUploadFailed):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		case errors.Is(err, service.ErrUnsupportedImageType):
+			c.JSON(http.StatusUnsupportedMediaType, gin.H{"error": err.Error()})
 
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured during signup"})
