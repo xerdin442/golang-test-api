@@ -8,6 +8,7 @@ import (
 
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
 	"github.com/xerdin442/api-practice/internal/api/dto"
+	"github.com/xerdin442/api-practice/internal/util"
 
 	repo "github.com/xerdin442/api-practice/internal/repository"
 )
@@ -22,7 +23,7 @@ func NewEventService(r repo.EventRepo) *EventService {
 
 func (s *EventService) CreateEvent(ctx context.Context, dto dto.CreateEventRequest, userID int32) (database.Event, error) {
 	if dto.Datetime.Before(time.Now()) {
-		return database.Event{}, ErrInvalidDate
+		return database.Event{}, util.ErrInvalidDate
 	}
 
 	arg := database.CreateEventParams{
@@ -44,15 +45,15 @@ func (s *EventService) CreateEvent(ctx context.Context, dto dto.CreateEventReque
 
 func (s *EventService) UpdateEvent(ctx context.Context, dto dto.UpdateEventRequest, eventID, userID int32) (database.Event, error) {
 	if dto.Datetime.Before(time.Now()) {
-		return database.Event{}, ErrInvalidDate
+		return database.Event{}, util.ErrInvalidDate
 	}
 
 	event, err := s.repo.GetEvent(ctx, eventID)
 	if errors.Is(err, sql.ErrNoRows) {
-		return database.Event{}, ErrEventNotFound
+		return database.Event{}, util.ErrEventNotFound
 	}
 	if event.OwnerID != userID {
-		return database.Event{}, ErrOwnerRestrictedAction
+		return database.Event{}, util.ErrOwnerRestrictedAction
 	}
 
 	arg := database.UpdateEventParams{
@@ -86,7 +87,7 @@ func (s *EventService) GetEvent(ctx context.Context, eventID int32) (database.Ev
 	result, err := s.repo.GetEvent(ctx, eventID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return database.Event{}, ErrEventNotFound
+			return database.Event{}, util.ErrEventNotFound
 		}
 
 		return database.Event{}, err
@@ -98,10 +99,10 @@ func (s *EventService) GetEvent(ctx context.Context, eventID int32) (database.Ev
 func (s *EventService) DeleteEvent(ctx context.Context, eventID, userID int32) error {
 	event, err := s.repo.GetEvent(ctx, eventID)
 	if errors.Is(err, sql.ErrNoRows) {
-		return ErrEventNotFound
+		return util.ErrEventNotFound
 	}
 	if event.OwnerID != userID {
-		return ErrOwnerRestrictedAction
+		return util.ErrOwnerRestrictedAction
 	}
 
 	if err := s.repo.DeleteEvent(ctx, eventID); err != nil {
@@ -141,10 +142,10 @@ func (s *EventService) RevokeTicket(ctx context.Context, userID, eventID int32) 
 func (s *EventService) GetEventAttendees(ctx context.Context, userID, eventID int32) ([]database.GetEventAttendeesRow, error) {
 	event, err := s.repo.GetEvent(ctx, eventID)
 	if errors.Is(err, sql.ErrNoRows) {
-		return []database.GetEventAttendeesRow{}, ErrEventNotFound
+		return []database.GetEventAttendeesRow{}, util.ErrEventNotFound
 	}
 	if event.OwnerID != userID {
-		return []database.GetEventAttendeesRow{}, ErrOwnerRestrictedAction
+		return []database.GetEventAttendeesRow{}, util.ErrOwnerRestrictedAction
 	}
 
 	return s.repo.GetEventAttendees(ctx, eventID)

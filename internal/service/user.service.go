@@ -27,7 +27,7 @@ func NewUserService(r repo.UserRepo) *UserService {
 func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *asynq.Client) (database.User, error) {
 	user, _ := s.repo.GetUserByEmail(ctx, dto.Email)
 	if user.Email == dto.Email {
-		return database.User{}, ErrEmailAlreadyExists
+		return database.User{}, util.ErrEmailAlreadyExists
 	}
 
 	// Generate password hash
@@ -47,15 +47,16 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 		// Validate file MIME type
 		err := util.ParseImageMimetype(file)
 		if err != nil {
-			return database.User{}, ErrUnsupportedImageType
+			return database.User{}, util.ErrUnsupportedImageType
 		}
 
 		// Upload file to Cloudinary
 		uploadResult, err := util.ProcessFileUpload(file, "profile_images")
 		if err != nil {
-			return database.User{}, ErrFileUploadFailed
+			return database.User{}, util.ErrFileUploadFailed
 		}
 
+		// Retrieve upload URL
 		profileImage = uploadResult.SecureURL
 	}
 
@@ -101,13 +102,13 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 func (s *UserService) Login(ctx context.Context, dto dto.LoginRequest) (string, error) {
 	user, err := s.repo.GetUserByEmail(ctx, dto.Email)
 	if errors.Is(err, sql.ErrNoRows) {
-		return "", ErrInvalidEmail
+		return "", util.ErrInvalidEmail
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(dto.Password)); err != nil {
 		switch {
 		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):
-			return "", ErrInvalidPassword
+			return "", util.ErrInvalidPassword
 
 		default:
 			return "", err

@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"github.com/xerdin442/api-practice/internal/api/dto"
-	"github.com/xerdin442/api-practice/internal/service"
+	"github.com/xerdin442/api-practice/internal/util"
 )
 
 func (h *RouteHandler) CreateEvent(c *gin.Context) {
@@ -29,7 +29,7 @@ func (h *RouteHandler) CreateEvent(c *gin.Context) {
 		logger.Error().Err(err).Msg("Event creation error")
 
 		switch {
-		case errors.Is(err, service.ErrInvalidDate):
+		case errors.Is(err, util.ErrInvalidDate):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		default:
@@ -69,10 +69,10 @@ func (h *RouteHandler) UpdateEvent(c *gin.Context) {
 		logger.Error().Err(err).Msg("Event update error")
 
 		switch {
-		case errors.Is(err, service.ErrInvalidDate), errors.Is(err, service.ErrEventNotFound):
+		case errors.Is(err, util.ErrInvalidDate), errors.Is(err, util.ErrEventNotFound):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-		case errors.Is(err, service.ErrOwnerRestrictedAction):
+		case errors.Is(err, util.ErrOwnerRestrictedAction):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 
 		default:
@@ -116,7 +116,7 @@ func (h *RouteHandler) GetEvent(c *gin.Context) {
 		logger.Error().Err(err).Msg("Event fetch error")
 
 		switch {
-		case errors.Is(err, service.ErrEventNotFound):
+		case errors.Is(err, util.ErrEventNotFound):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		default:
@@ -146,10 +146,10 @@ func (h *RouteHandler) DeleteEvent(c *gin.Context) {
 		logger.Error().Err(err).Msg("Delete event error")
 
 		switch {
-		case errors.Is(err, service.ErrEventNotFound):
+		case errors.Is(err, util.ErrEventNotFound):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-		case errors.Is(err, service.ErrOwnerRestrictedAction):
+		case errors.Is(err, util.ErrOwnerRestrictedAction):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 
 		default:
@@ -226,10 +226,10 @@ func (h *RouteHandler) GetEventAttendees(c *gin.Context) {
 		logger.Error().Err(err).Msg("Fetch attendees error")
 
 		switch {
-		case errors.Is(err, service.ErrEventNotFound):
+		case errors.Is(err, util.ErrEventNotFound):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-		case errors.Is(err, service.ErrOwnerRestrictedAction):
+		case errors.Is(err, util.ErrOwnerRestrictedAction):
 			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 
 		default:

@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"github.com/xerdin442/api-practice/internal/api/dto"
-	"github.com/xerdin442/api-practice/internal/service"
+	"github.com/xerdin442/api-practice/internal/util"
 )
 
 func (h *RouteHandler) Signup(c *gin.Context) {
@@ -28,10 +28,10 @@ func (h *RouteHandler) Signup(c *gin.Context) {
 		logger.Error().Err(err).Msg("Signup error")
 
 		switch {
-		case errors.Is(err, service.ErrEmailAlreadyExists), errors.Is(err, service.ErrFileUploadFailed):
+		case errors.Is(err, util.ErrEmailAlreadyExists), errors.Is(err, util.ErrFileUploadFailed):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
-		case errors.Is(err, service.ErrUnsupportedImageType):
+		case errors.Is(err, util.ErrUnsupportedImageType):
 			c.JSON(http.StatusUnsupportedMediaType, gin.H{"error": err.Error()})
 
 		default:
@@ -61,7 +61,7 @@ func (h *RouteHandler) Login(c *gin.Context) {
 		logger.Error().Err(err).Msg("Login error")
 
 		switch {
-		case errors.Is(err, service.ErrInvalidEmail), errors.Is(err, service.ErrInvalidPassword):
+		case errors.Is(err, util.ErrInvalidEmail), errors.Is(err, util.ErrInvalidPassword):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		default:
