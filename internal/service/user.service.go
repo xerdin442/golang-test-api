@@ -66,6 +66,7 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 		Password: string(hashedPassword),
 		ProfileImage: sql.NullString{
 			String: profileImage,
+			Valid:  true,
 		},
 	}
 

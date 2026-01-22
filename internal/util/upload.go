@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"errors"
+	"io"
 	"mime/multipart"
 	"net/http"
 
@@ -18,6 +19,9 @@ func ParseImageMimetype(file multipart.File) error {
 	// Detect MIME type of file
 	contentType := http.DetectContentType(buffer)
 
+	// Reset file pointer
+	file.Seek(0, io.SeekStart)
+
 	// Verify if the MIME type is supported
 	if contentType != "image/jpeg" && contentType != "image/png" && contentType != "image/heic" {
 		return errors.New("Unsupported MIME type")
@@ -31,7 +35,7 @@ func ProcessFileUpload(file multipart.File, folder string) (*uploader.UploadResu
 	cloudSecret := env.GetStr("CLOUDINARY_SECRET")
 	apiKey := env.GetStr("CLOUDINARY_API_KEY")
 
-	cld, _ := cloudinary.NewFromParams(cloudName, cloudSecret, apiKey)
+	cld, _ := cloudinary.NewFromParams(cloudName, apiKey, cloudSecret)
 
 	return cld.Upload.Upload(context.Background(), file, uploader.UploadParams{
 		Folder: folder,

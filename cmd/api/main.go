@@ -55,7 +55,7 @@ func main() {
 	)
 
 	app := &application{
-		port:       env.GetInt("PORT"),
+		port:       env.GetInt("APP_PORT"),
 		services:   services,
 		cache:      cache,
 		tasksQueue: tasksQueue,
