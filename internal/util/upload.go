@@ -9,10 +9,7 @@ import (
 
 	"github.com/cloudinary/cloudinary-go/v2"
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
-	"github.com/xerdin442/api-practice/internal/config"
 )
-
-var secrets = config.Load()
 
 func ParseImageMimetype(file multipart.File) error {
 	buffer := make([]byte, 512)
@@ -32,13 +29,8 @@ func ParseImageMimetype(file multipart.File) error {
 	return nil
 }
 
-func ProcessFileUpload(file multipart.File, folder string) (*uploader.UploadResult, error) {
-	cloudName := secrets.CloudinaryName
-	cloudSecret := secrets.CloudinarySecret
-	apiKey := secrets.CloudinaryApiKey
-
-	cld, _ := cloudinary.NewFromParams(cloudName, apiKey, cloudSecret)
-
+func ProcessFileUpload(file multipart.File, folder string, cloudName, cloudApiKey, cloudSecret string) (*uploader.UploadResult, error) {
+	cld, _ := cloudinary.NewFromParams(cloudName, cloudApiKey, cloudSecret)
 	return cld.Upload.Upload(context.Background(), file, uploader.UploadParams{
 		Folder: folder,
 	})

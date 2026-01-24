@@ -32,17 +32,17 @@ func (app *application) routes() http.Handler {
 	{
 		auth.POST("/signup", h.Signup)
 		auth.POST("/login", h.Login)
-		auth.POST("/logout", middleware.JwtGuard(app.cache), h.Logout)
+		auth.POST("/logout", middleware.JwtGuard(app.cache, app.cfg.JwtSecret), h.Logout)
 	}
 
 	users := v1.Group("/users")
-	users.Use(middleware.JwtGuard(app.cache))
+	users.Use(middleware.JwtGuard(app.cache, app.cfg.JwtSecret))
 	{
 		users.GET("/profile", h.GetProfile)
 	}
 
 	events := v1.Group("/events")
-	events.Use(middleware.JwtGuard(app.cache))
+	events.Use(middleware.JwtGuard(app.cache, app.cfg.JwtSecret))
 	{
 		events.POST("", h.CreateEvent)
 		events.GET("/:id", h.GetEvent)
@@ -52,7 +52,7 @@ func (app *application) routes() http.Handler {
 	}
 
 	attendees := v1.Group("/events/:id/attendees")
-	attendees.Use(middleware.JwtGuard(app.cache))
+	attendees.Use(middleware.JwtGuard(app.cache, app.cfg.JwtSecret))
 	{
 		attendees.GET("/", h.GetEventAttendees)
 		attendees.POST("/rsvp", h.ReserveTicket)

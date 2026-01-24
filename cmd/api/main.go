@@ -20,6 +20,7 @@ type application struct {
 	services   *service.Manager
 	cache      *cache.Redis
 	tasksQueue *asynq.Client
+	cfg        *config.Config
 }
 
 func main() {
@@ -47,9 +48,9 @@ func main() {
 	defer db.Close()
 
 	// Initialize cache, repositories and services
-	cache := cache.NewRedis()
+	cache := cache.NewRedis(secrets.RedisAddr, secrets.RedisPassword, secrets)
 	registry := repo.NewRegistry(db)
-	services := service.NewManager(registry)
+	services := service.NewManager(registry, secrets)
 
 	// Initialize task queue
 	tasksQueue := asynq.NewClient(
@@ -64,6 +65,7 @@ func main() {
 		services:   services,
 		cache:      cache,
 		tasksQueue: tasksQueue,
+		cfg:        secrets,
 	}
 
 	// Start the http server

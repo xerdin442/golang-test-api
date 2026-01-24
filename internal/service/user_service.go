@@ -5,10 +5,10 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/hibiken/asynq"
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
 	"github.com/xerdin442/api-practice/internal/api/dto"
 	"github.com/xerdin442/api-practice/internal/api/middleware"
+	"github.com/xerdin442/api-practice/internal/config"
 	repo "github.com/xerdin442/api-practice/internal/repository"
 	"github.com/xerdin442/api-practice/internal/tasks"
 	"github.com/xerdin442/api-practice/internal/util"
@@ -17,13 +17,14 @@ import (
 
 type UserService struct {
 	repo repo.UserRepo
+	cfg  *config.Config
 }
 
-func NewUserService(r repo.UserRepo) *UserService {
-	return &UserService{repo: r}
+func NewUserService(r repo.UserRepo, c *config.Config) *UserService {
+	return &UserService{repo: r, cfg: c}
 }
 
-func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *asynq.Client) (database.User, error) {
+func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, tasksClient tasks.TasksClient) (database.User, error) {
 	user, _ := s.repo.GetUserByEmail(ctx, dto.Email)
 	if user.Email == dto.Email {
 		return database.User{}, util.ErrEmailAlreadyExists
@@ -38,7 +39,7 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 	// Process file upload
 	var profileImage string
 	if dto.ProfileImage == nil {
-		profileImage = secrets.DefaultProfileImage
+		profileImage = s.cfg.DefaultProfileImage
 	} else {
 		file, _ := dto.ProfileImage.Open()
 		defer file.Close()
@@ -50,7 +51,9 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 		}
 
 		// Upload file to Cloudinary
-		uploadResult, err := util.ProcessFileUpload(file, "profile_images")
+		uploadResult, err := util.ProcessFileUpload(file, "profile_images",
+			s.cfg.CloudinaryName, s.cfg.CloudinaryApiKey, s.cfg.CloudinarySecret)
+
 		if err != nil {
 			return database.User{}, util.ErrFileUploadFailed
 		}
@@ -79,7 +82,7 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 	// Parse email template
 	templateData := &util.OnboardingTemplateData{
 		Name:    dto.Name,
-		Company: secrets.AppName,
+		Company: s.cfg.AppName,
 	}
 	content, _ := util.ParseEmailTemplate(templateData, "onboarding.html")
 
@@ -92,7 +95,7 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 
 	// Send onboarding email to new user
 	task, _ := tasks.NewEmailTask(payload)
-	_, err = queue.Enqueue(task)
+	_, err = tasksClient.Enqueue(task)
 
 	userID, _ := result.LastInsertId()
 	return s.repo.GetUserByID(ctx, int32(userID))
@@ -114,7 +117,7 @@ func (s *UserService) Login(ctx context.Context, dto dto.LoginRequest) (string, 
 		}
 	}
 
-	return middleware.GenerateToken(user.ID)
+	return middleware.GenerateToken(user.ID, s.cfg.JwtSecret)
 }
 
 func (s *UserService) GetProfile(ctx context.Context, userID int32) (database.User, error) {

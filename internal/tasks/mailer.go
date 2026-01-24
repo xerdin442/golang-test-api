@@ -8,10 +8,7 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/resend/resend-go/v2"
 	"github.com/rs/zerolog/log"
-	"github.com/xerdin442/api-practice/internal/config"
 )
-
-var secrets = config.Load()
 
 type EmailPayload struct {
 	Recipient string `json:"recipient"`
@@ -24,15 +21,15 @@ func NewEmailTask(data *EmailPayload) (*asynq.Task, error) {
 	return asynq.NewTask("email_queue", payload), nil
 }
 
-func HandleEmailTask(ctx context.Context, t *asynq.Task) error {
+func (h *TaskHandler) HandleEmailTask(ctx context.Context, t *asynq.Task) error {
 	var p EmailPayload
 	if err := json.Unmarshal(t.Payload(), &p); err != nil {
 		return err
 	}
 
-	resendClient := resend.NewClient(secrets.ResendEmailApiKey)
+	resendClient := resend.NewClient(h.cfg.ResendEmailApiKey)
 	params := &resend.SendEmailRequest{
-		From:    fmt.Sprintf("%s <%s>", secrets.AppName, secrets.AppEmail),
+		From:    fmt.Sprintf("%s <%s>", h.cfg.AppName, h.cfg.AppEmail),
 		To:      []string{p.Recipient},
 		Subject: p.Subject,
 		Html:    p.Content,

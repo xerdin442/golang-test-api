@@ -8,16 +8,18 @@ import (
 	"github.com/xerdin442/api-practice/internal/config"
 )
 
-var secrets = config.Load()
+type Redis struct {
+	Client *redis.Client
+	cfg    *config.Config
+}
 
-type Redis struct{ Client *redis.Client }
-
-func NewRedis() *Redis {
+func NewRedis(addr, password string, c *config.Config) *Redis {
 	client := redis.NewClient(&redis.Options{
-		Addr:     secrets.RedisAddr,
-		Password: secrets.RedisPassword,
+		Addr:     addr,
+		Password: password,
 	})
-	return &Redis{Client: client}
+
+	return &Redis{Client: client, cfg: c}
 }
 
 func (r *Redis) SetJTI(ctx context.Context, key, value string, exp time.Time) error {

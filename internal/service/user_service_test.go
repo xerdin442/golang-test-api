@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"os"
 	"testing"
 
 	"github.com/hibiken/asynq"
@@ -11,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
 	"github.com/xerdin442/api-practice/internal/api/dto"
+	"github.com/xerdin442/api-practice/internal/config"
 )
 
 type mockResult struct{}
@@ -37,13 +37,24 @@ func (m *mockUserRepo) GetUserByID(ctx context.Context, id int32) (database.User
 	return args.Get(0).(database.User), args.Error(1)
 }
 
+type mockTasksClient struct {
+	mock.Mock
+}
+
+func (m *mockTasksClient) Enqueue(task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error) {
+	args := m.Called(task, opts)
+	return args.Get(0).(*asynq.TaskInfo), args.Error(1)
+}
+
 func TestSignup(t *testing.T) {
-	os.Setenv("JWT_SECRET", "jwt_secret_key")
-	os.Setenv("APP_NAME", "Test App")
-	os.Setenv("DEFAULT_PROFILE_IMAGE", "default_profile_image")
+	testCfg := &config.Config{
+		DefaultProfileImage: "default_profile_image",
+	}
 
 	mockRepo := new(mockUserRepo)
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, testCfg)
+
+	mockClient := new(mockTasksClient)
 
 	t.Run("Success", func(t *testing.T) {
 		signupDto := dto.SignupRequest{
@@ -58,14 +69,20 @@ func TestSignup(t *testing.T) {
 		mockRepo.On("CreateUser", mock.Anything, mock.MatchedBy(func(p database.CreateUserParams) bool {
 			return p.Email == signupDto.Email &&
 				p.Name == signupDto.Name &&
-				p.ProfileImage.String == secrets.DefaultProfileImage
+				p.ProfileImage.String == testCfg.DefaultProfileImage
 		})).Return(new(mockResult), nil)
 
 		mockRepo.On("GetUserByID", mock.Anything, mock.Anything).
 			Return(database.User{Email: signupDto.Email}, nil)
 
-		var taskClient *asynq.Client
-		_, err := svc.Signup(context.Background(), signupDto, taskClient)
+		taskInfo := &asynq.TaskInfo{
+			ID:      "test-id",
+			Queue:   "default",
+			Payload: []byte("test-payload"),
+		}
+		mockClient.On("Enqueue", mock.Anything, mock.Anything).Return(taskInfo, nil)
+
+		_, err := svc.Signup(context.Background(), signupDto, mockClient)
 
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
