@@ -11,12 +11,14 @@ import (
 	"github.com/xerdin442/api-practice/internal/config"
 )
 
+var secretKey = []byte(config.Load().JwtSecret)
+
 type AllClaims struct {
 	UserID int32 `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID int32, secretKey string) (string, error) {
+func GenerateToken(userID int32) (string, error) {
 	claims := AllClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -26,7 +28,7 @@ func GenerateToken(userID int32, secretKey string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secretKey))
+	return token.SignedString(secretKey)
 }
 
 func JwtGuard(cache *cache.Redis) gin.HandlerFunc {
@@ -39,7 +41,6 @@ func JwtGuard(cache *cache.Redis) gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		secretKey := []byte(config.Load().JwtSecret)
 		token, err := jwt.ParseWithClaims(tokenString, &AllClaims{}, func(token *jwt.Token) (any, error) {
 			return secretKey, nil
 		})

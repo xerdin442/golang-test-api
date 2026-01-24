@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 	"database/sql"
+	"os"
 	"testing"
 
+	"github.com/hibiken/asynq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
@@ -36,6 +38,10 @@ func (m *mockUserRepo) GetUserByID(ctx context.Context, id int32) (database.User
 }
 
 func TestSignup(t *testing.T) {
+	os.Setenv("JWT_SECRET", "jwt_secret_key")
+	os.Setenv("APP_NAME", "Test App")
+	os.Setenv("DEFAULT_PROFILE_IMAGE", "default_profile_image")
+
 	mockRepo := new(mockUserRepo)
 	svc := NewUserService(mockRepo)
 
@@ -58,7 +64,8 @@ func TestSignup(t *testing.T) {
 		mockRepo.On("GetUserByID", mock.Anything, mock.Anything).
 			Return(database.User{Email: signupDto.Email}, nil)
 
-		_, err := svc.Signup(context.Background(), signupDto, nil)
+		var taskClient *asynq.Client
+		_, err := svc.Signup(context.Background(), signupDto, taskClient)
 
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)

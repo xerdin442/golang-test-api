@@ -114,7 +114,7 @@ func (s *UserService) Login(ctx context.Context, dto dto.LoginRequest) (string, 
 		}
 	}
 
-	return middleware.GenerateToken(user.ID, secrets.JwtSecret)
+	return middleware.GenerateToken(user.ID)
 }
 
 func (s *UserService) GetProfile(ctx context.Context, userID int32) (database.User, error) {

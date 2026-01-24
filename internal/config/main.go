@@ -26,7 +26,6 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		JwtSecret:           GetStr("JWT_SECRET"),
 		AppName:             GetStr("APP_NAME"),
 		AppEmail:            GetStr("APP_EMAIL"),
 		AppPort:             GetInt("APP_PORT"),
@@ -34,6 +33,7 @@ func Load() *Config {
 		GooseDbString:       GetStr("GOOSE_DBSTRING"),
 		RedisAddr:           GetStr("REDIS_ADDR"),
 		RedisPassword:       GetStr("REDIS_PASSWORD"),
+		JwtSecret:           GetStr("JWT_SECRET"),
 		ResendEmailApiKey:   GetStr("RESEND_EMAIL_API_KEY"),
 		CloudinaryName:      GetStr("CLOUDINARY_NAME"),
 		CloudinarySecret:    GetStr("CLOUDINARY_SECRET"),
