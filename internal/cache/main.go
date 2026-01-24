@@ -5,17 +5,19 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/xerdin442/api-practice/internal/env"
+	"github.com/xerdin442/api-practice/internal/config"
 )
+
+var secrets = config.Load()
 
 type Redis struct{ Client *redis.Client }
 
 func NewRedis() *Redis {
-	addr := env.GetStr("REDIS_ADDR")
-	password := env.GetStr("REDIS_PASSWORD")
-
-	rdb := redis.NewClient(&redis.Options{Addr: addr, Password: password})
-	return &Redis{Client: rdb}
+	client := redis.NewClient(&redis.Options{
+		Addr:     secrets.RedisAddr,
+		Password: secrets.RedisPassword,
+	})
+	return &Redis{Client: client}
 }
 
 func (r *Redis) SetJTI(ctx context.Context, key, value string, exp time.Time) error {

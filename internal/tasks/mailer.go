@@ -8,18 +8,15 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/resend/resend-go/v2"
 	"github.com/rs/zerolog/log"
-	"github.com/xerdin442/api-practice/internal/env"
+	"github.com/xerdin442/api-practice/internal/config"
 )
+
+var secrets = config.Load()
 
 type EmailPayload struct {
 	Recipient string `json:"recipient"`
 	Subject   string `json:"subject"`
 	Content   string `json:"content"`
-}
-
-type OnboardingTemplateData struct {
-	Name    string `json:"name"`
-	Company string `json:"company"`
 }
 
 func NewEmailTask(data *EmailPayload) (*asynq.Task, error) {
@@ -33,9 +30,9 @@ func HandleEmailTask(ctx context.Context, t *asynq.Task) error {
 		return err
 	}
 
-	resendClient := resend.NewClient(env.GetStr("RESEND_EMAIL_API_KEY"))
+	resendClient := resend.NewClient(secrets.ResendEmailApiKey)
 	params := &resend.SendEmailRequest{
-		From:    fmt.Sprintf("%s <%s>", env.GetStr("APP_NAME"), env.GetStr("APP_EMAIL")),
+		From:    fmt.Sprintf("%s <%s>", secrets.AppName, secrets.AppEmail),
 		To:      []string{p.Recipient},
 		Subject: p.Subject,
 		Html:    p.Content,

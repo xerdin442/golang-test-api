@@ -7,11 +7,10 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/hibiken/asynq"
-	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/xerdin442/api-practice/internal/cache"
-	"github.com/xerdin442/api-practice/internal/env"
+	"github.com/xerdin442/api-practice/internal/config"
 	repo "github.com/xerdin442/api-practice/internal/repository"
 	"github.com/xerdin442/api-practice/internal/service"
 )
@@ -27,13 +26,16 @@ func main() {
 	// Initialize logger
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
+	// Load environment variables
+	secrets := config.Load()
+
 	// Improve readability of the logs in development
-	if env.GetStr("NODE_ENV") == "development" {
+	if secrets.Environment == "development" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
 	}
 
 	// Validate connection string
-	db, err := sql.Open("mysql", env.GetStr("GOOSE_DBSTRING"))
+	db, err := sql.Open("mysql", secrets.GooseDbString)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Invalid database connection string")
 	}
@@ -51,11 +53,14 @@ func main() {
 
 	// Initialize task queue
 	tasksQueue := asynq.NewClient(
-		asynq.RedisClientOpt{Addr: env.GetStr("REDIS_ADDR"), Password: env.GetStr("REDIS_PASSWORD")},
+		asynq.RedisClientOpt{
+			Addr:     secrets.RedisAddr,
+			Password: secrets.RedisPassword,
+		},
 	)
 
 	app := &application{
-		port:       env.GetInt("APP_PORT"),
+		port:       secrets.AppPort,
 		services:   services,
 		cache:      cache,
 		tasksQueue: tasksQueue,

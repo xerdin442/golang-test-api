@@ -9,7 +9,6 @@ import (
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
 	"github.com/xerdin442/api-practice/internal/api/dto"
 	"github.com/xerdin442/api-practice/internal/api/middleware"
-	"github.com/xerdin442/api-practice/internal/env"
 	repo "github.com/xerdin442/api-practice/internal/repository"
 	"github.com/xerdin442/api-practice/internal/tasks"
 	"github.com/xerdin442/api-practice/internal/util"
@@ -39,7 +38,7 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 	// Process file upload
 	var profileImage string
 	if dto.ProfileImage == nil {
-		profileImage = env.GetStr("DEFAULT_PROFILE_IMAGE")
+		profileImage = secrets.DefaultProfileImage
 	} else {
 		file, _ := dto.ProfileImage.Open()
 		defer file.Close()
@@ -78,9 +77,9 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, queue *
 	}
 
 	// Parse email template
-	templateData := &tasks.OnboardingTemplateData{
+	templateData := &util.OnboardingTemplateData{
 		Name:    dto.Name,
-		Company: env.GetStr("APP_NAME"),
+		Company: secrets.AppName,
 	}
 	content, _ := util.ParseEmailTemplate(templateData, "onboarding.html")
 
@@ -115,7 +114,7 @@ func (s *UserService) Login(ctx context.Context, dto dto.LoginRequest) (string, 
 		}
 	}
 
-	return middleware.GenerateToken(user.ID)
+	return middleware.GenerateToken(user.ID, secrets.JwtSecret)
 }
 
 func (s *UserService) GetProfile(ctx context.Context, userID int32) (database.User, error) {

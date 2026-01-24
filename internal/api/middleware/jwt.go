@@ -8,17 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/xerdin442/api-practice/internal/cache"
-	"github.com/xerdin442/api-practice/internal/env"
+	"github.com/xerdin442/api-practice/internal/config"
 )
-
-var secretKey = []byte(env.GetStr("JWT_SECRET"))
 
 type AllClaims struct {
 	UserID int32 `json:"user_id"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID int32) (string, error) {
+func GenerateToken(userID int32, secretKey string) (string, error) {
 	claims := AllClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -28,7 +26,7 @@ func GenerateToken(userID int32) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretKey)
+	return token.SignedString([]byte(secretKey))
 }
 
 func JwtGuard(cache *cache.Redis) gin.HandlerFunc {
@@ -41,6 +39,7 @@ func JwtGuard(cache *cache.Redis) gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
+		secretKey := []byte(config.Load().JwtSecret)
 		token, err := jwt.ParseWithClaims(tokenString, &AllClaims{}, func(token *jwt.Token) (any, error) {
 			return secretKey, nil
 		})

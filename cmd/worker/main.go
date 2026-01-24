@@ -7,22 +7,24 @@ import (
 	"time"
 
 	"github.com/hibiken/asynq"
-	_ "github.com/joho/godotenv/autoload"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/xerdin442/api-practice/internal/env"
+	"github.com/xerdin442/api-practice/internal/config"
 	"github.com/xerdin442/api-practice/internal/tasks"
 )
 
 func main() {
+	// Load environment variables
+	secrets := config.Load()
+
 	// Improve readability of the logs in development
-	if env.GetStr("NODE_ENV") == "development" {
+	if secrets.Environment == "development" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
 	}
 
 	redisConn := asynq.RedisClientOpt{
-		Addr:     env.GetStr("REDIS_ADDR"),
-		Password: env.GetStr("REDIS_PASSWORD"),
+		Addr:     secrets.RedisAddr,
+		Password: secrets.RedisPassword,
 	}
 
 	// Initialize the worker server
