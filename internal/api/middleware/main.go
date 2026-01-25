@@ -7,9 +7,9 @@ import (
 
 type Middleware struct {
 	cfg   *config.Config
-	cache *cache.Redis
+	cache *cache.Cache
 }
 
-func New(c *config.Config, r *cache.Redis) *Middleware {
+func New(c *config.Config, r *cache.Cache) *Middleware {
 	return &Middleware{cfg: c, cache: r}
 }

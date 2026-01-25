@@ -11,6 +11,13 @@ import (
 	"github.com/cloudinary/cloudinary-go/v2/api/uploader"
 )
 
+type UploadConfig struct {
+	Folder      string
+	CloudName   string
+	ApiKey      string
+	CloudSecret string
+}
+
 func ParseImageMimetype(file multipart.File) error {
 	buffer := make([]byte, 512)
 	file.Read(buffer)
@@ -29,9 +36,9 @@ func ParseImageMimetype(file multipart.File) error {
 	return nil
 }
 
-func ProcessFileUpload(file multipart.File, folder string, cloudName, cloudApiKey, cloudSecret string) (*uploader.UploadResult, error) {
-	cld, _ := cloudinary.NewFromParams(cloudName, cloudApiKey, cloudSecret)
+func ProcessFileUpload(file multipart.File, config *UploadConfig) (*uploader.UploadResult, error) {
+	cld, _ := cloudinary.NewFromParams(config.CloudName, config.ApiKey, config.CloudSecret)
 	return cld.Upload.Upload(context.Background(), file, uploader.UploadParams{
-		Folder: folder,
+		Folder: config.Folder,
 	})
 }

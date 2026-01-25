@@ -51,8 +51,13 @@ func (s *UserService) Signup(ctx context.Context, dto dto.SignupRequest, tasksCl
 		}
 
 		// Upload file to Cloudinary
-		uploadResult, err := util.ProcessFileUpload(file, "profile_images",
-			s.cfg.CloudinaryName, s.cfg.CloudinaryApiKey, s.cfg.CloudinarySecret)
+		config := &util.UploadConfig{
+			Folder:      "profile_images",
+			CloudName:   s.cfg.CloudinaryName,
+			ApiKey:      s.cfg.CloudinaryApiKey,
+			CloudSecret: s.cfg.CloudinarySecret,
+		}
+		uploadResult, err := util.ProcessFileUpload(file, config)
 
 		if err != nil {
 			return database.User{}, util.ErrFileUploadFailed

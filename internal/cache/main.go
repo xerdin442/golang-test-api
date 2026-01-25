@@ -8,26 +8,25 @@ import (
 	"github.com/xerdin442/api-practice/internal/config"
 )
 
-type Redis struct {
-	Client *redis.Client
-	cfg    *config.Config
+type Cache struct {
+	Redis *redis.Client
 }
 
-func NewRedis(addr, password string, c *config.Config) *Redis {
+func New(c *config.Config) *Cache {
 	client := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
+		Addr:     c.RedisAddr,
+		Password: c.RedisPassword,
 	})
 
-	return &Redis{Client: client, cfg: c}
+	return &Cache{Redis: client}
 }
 
-func (r *Redis) SetJTI(ctx context.Context, key, value string, exp time.Time) error {
-	return r.Client.Set(ctx, key, value, time.Until(exp)).Err()
+func (c *Cache) SetJTI(ctx context.Context, key, value string, exp time.Time) error {
+	return c.Redis.Set(ctx, key, value, time.Until(exp)).Err()
 }
 
-func (r *Redis) IsBlacklisted(ctx context.Context, token string) (bool, error) {
-	n, err := r.Client.Exists(ctx, token).Result()
+func (c *Cache) IsBlacklisted(ctx context.Context, token string) (bool, error) {
+	n, err := c.Redis.Exists(ctx, token).Result()
 	if err != nil {
 		return false, err
 	}

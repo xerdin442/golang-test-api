@@ -18,7 +18,7 @@ import (
 type application struct {
 	port       int
 	services   *service.Manager
-	cache      *cache.Redis
+	cache      *cache.Cache
 	tasksQueue *asynq.Client
 	cfg        *config.Config
 }
@@ -28,15 +28,15 @@ func main() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 
 	// Load environment variables
-	secrets := config.Load()
+	cfg := config.Load()
 
 	// Improve readability of the logs in development
-	if secrets.Environment == "development" {
+	if cfg.Environment == "development" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
 	}
 
 	// Validate connection string
-	db, err := sql.Open("mysql", secrets.GooseDbString)
+	db, err := sql.Open("mysql", cfg.GooseDbString)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Invalid database connection string")
 	}
@@ -48,24 +48,24 @@ func main() {
 	defer db.Close()
 
 	// Initialize cache, repositories and services
-	cache := cache.NewRedis(secrets.RedisAddr, secrets.RedisPassword, secrets)
+	cache := cache.New(cfg)
 	registry := repo.NewRegistry(db)
-	services := service.NewManager(registry, secrets)
+	services := service.NewManager(registry, cfg)
 
 	// Initialize task queue
 	tasksQueue := asynq.NewClient(
 		asynq.RedisClientOpt{
-			Addr:     secrets.RedisAddr,
-			Password: secrets.RedisPassword,
+			Addr:     cfg.RedisAddr,
+			Password: cfg.RedisPassword,
 		},
 	)
 
 	app := &application{
-		port:       secrets.AppPort,
+		port:       cfg.AppPort,
 		services:   services,
 		cache:      cache,
 		tasksQueue: tasksQueue,
-		cfg:        secrets,
+		cfg:        cfg,
 	}
 
 	// Start the http server

@@ -15,16 +15,16 @@ import (
 
 func main() {
 	// Load environment variables
-	secrets := config.Load()
+	cfg := config.Load()
 
 	// Improve readability of the logs in development
-	if secrets.Environment == "development" {
+	if cfg.Environment == "development" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
 	}
 
 	redisConn := asynq.RedisClientOpt{
-		Addr:     secrets.RedisAddr,
-		Password: secrets.RedisPassword,
+		Addr:     cfg.RedisAddr,
+		Password: cfg.RedisPassword,
 	}
 
 	// Initialize the worker server
@@ -34,7 +34,7 @@ func main() {
 	)
 
 	// Define tasks handlers
-	handler := tasks.NewTaskHandler(secrets)
+	handler := tasks.NewTaskHandler(cfg)
 
 	mux := asynq.NewServeMux()
 	mux.HandleFunc("email_queue", handler.HandleEmailTask)
