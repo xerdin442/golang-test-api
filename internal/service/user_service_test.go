@@ -11,6 +11,8 @@ import (
 	database "github.com/xerdin442/api-practice/internal/adapters/generated"
 	"github.com/xerdin442/api-practice/internal/api/dto"
 	"github.com/xerdin442/api-practice/internal/config"
+	"github.com/xerdin442/api-practice/internal/util"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type mockResult struct{}
@@ -51,20 +53,33 @@ func TestSignup(t *testing.T) {
 		DefaultProfileImage: "default_profile_image",
 	}
 
-	mockRepo := new(mockUserRepo)
-	svc := NewUserService(mockRepo, testCfg)
-
 	mockClient := new(mockTasksClient)
 
-	t.Run("Success", func(t *testing.T) {
-		signupDto := dto.SignupRequest{
-			Email:    "test@example.com",
-			Password: "password123",
-			Name:     "Test User",
-		}
+	signupDto := dto.SignupRequest{
+		Email:    "test@example.com",
+		Password: "Password123",
+		Name:     "Test User",
+	}
+
+	t.Run("Email Already Exists", func(t *testing.T) {
+		mockRepo := new(mockUserRepo)
+		svc := NewUserService(mockRepo, testCfg)
 
 		mockRepo.On("GetUserByEmail", mock.Anything, signupDto.Email).
-			Return(database.User{}, sql.ErrNoRows)
+			Return(database.User{Email: signupDto.Email}, nil)
+
+		_, err := svc.Signup(context.Background(), signupDto, mockClient)
+
+		assert.ErrorIs(t, err, util.ErrEmailAlreadyExists)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(mockUserRepo)
+		svc := NewUserService(mockRepo, testCfg)
+
+		mockRepo.On("GetUserByEmail", mock.Anything, signupDto.Email).
+			Return(database.User{}, nil)
 
 		mockRepo.On("CreateUser", mock.Anything, mock.MatchedBy(func(p database.CreateUserParams) bool {
 			return p.Email == signupDto.Email &&
@@ -83,6 +98,60 @@ func TestSignup(t *testing.T) {
 		mockClient.On("Enqueue", mock.Anything, mock.Anything).Return(taskInfo, nil)
 
 		_, err := svc.Signup(context.Background(), signupDto, mockClient)
+
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestLogin(t *testing.T) {
+	testCfg := &config.Config{
+		JwtSecret: "jwt_secret_key",
+	}
+
+	loginDto := dto.LoginRequest{
+		Email:    "test@example.com",
+		Password: "Password123",
+	}
+
+	t.Run("Invalid Email", func(t *testing.T) {
+		mockRepo := new(mockUserRepo)
+		svc := NewUserService(mockRepo, testCfg)
+
+		mockRepo.On("GetUserByEmail", mock.Anything, loginDto.Email).
+			Return(database.User{Email: "xerdin442@example.com"}, sql.ErrNoRows)
+
+		_, err := svc.Login(context.Background(), loginDto)
+
+		assert.ErrorIs(t, err, util.ErrInvalidEmail)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Invalid Password", func(t *testing.T) {
+		mockRepo := new(mockUserRepo)
+		svc := NewUserService(mockRepo, testCfg)
+
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("Password456"), bcrypt.DefaultCost)
+
+		mockRepo.On("GetUserByEmail", mock.Anything, loginDto.Email).
+			Return(database.User{Email: loginDto.Email, Password: string(hashedPassword)}, nil)
+
+		_, err := svc.Login(context.Background(), loginDto)
+
+		assert.ErrorIs(t, err, util.ErrInvalidPassword)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Success", func(t *testing.T) {
+		mockRepo := new(mockUserRepo)
+		svc := NewUserService(mockRepo, testCfg)
+
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(loginDto.Password), bcrypt.DefaultCost)
+
+		mockRepo.On("GetUserByEmail", mock.Anything, loginDto.Email).
+			Return(database.User{Email: loginDto.Email, Password: string(hashedPassword)}, nil)
+
+		_, err := svc.Login(context.Background(), loginDto)
 
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
