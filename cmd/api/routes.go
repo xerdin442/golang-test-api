@@ -12,7 +12,10 @@ import (
 
 func (app *application) routes() http.Handler {
 	r := gin.New()
-	r.Use(middleware.CustomRequestLogger())
+	m := middleware.New(app.cfg, app.cache)
+
+	r.Use(m.CustomRequestLogger())
+	r.Use(m.RateLimiter())
 	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
@@ -23,8 +26,6 @@ func (app *application) routes() http.Handler {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	r.Use(middleware.RateLimiter())
-
 	v1 := r.Group("api/v1")
 	h := handlers.New(app.services, app.cache, app.tasksQueue)
 
@@ -32,17 +33,17 @@ func (app *application) routes() http.Handler {
 	{
 		auth.POST("/signup", h.Signup)
 		auth.POST("/login", h.Login)
-		auth.POST("/logout", middleware.JwtGuard(app.cache, app.cfg.JwtSecret), h.Logout)
+		auth.POST("/logout", m.JwtGuard(), h.Logout)
 	}
 
 	users := v1.Group("/users")
-	users.Use(middleware.JwtGuard(app.cache, app.cfg.JwtSecret))
+	users.Use(m.JwtGuard())
 	{
 		users.GET("/profile", h.GetProfile)
 	}
 
 	events := v1.Group("/events")
-	events.Use(middleware.JwtGuard(app.cache, app.cfg.JwtSecret))
+	events.Use(m.JwtGuard())
 	{
 		events.POST("", h.CreateEvent)
 		events.GET("/:id", h.GetEvent)
@@ -52,7 +53,7 @@ func (app *application) routes() http.Handler {
 	}
 
 	attendees := v1.Group("/events/:id/attendees")
-	attendees.Use(middleware.JwtGuard(app.cache, app.cfg.JwtSecret))
+	attendees.Use(m.JwtGuard())
 	{
 		attendees.GET("/", h.GetEventAttendees)
 		attendees.POST("/rsvp", h.ReserveTicket)

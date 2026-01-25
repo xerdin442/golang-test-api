@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/xerdin442/api-practice/internal/cache"
 )
 
 type AllClaims struct {
@@ -28,7 +27,7 @@ func GenerateToken(userID int32, secretKey string) (string, error) {
 	return token.SignedString([]byte(secretKey))
 }
 
-func JwtGuard(cache *cache.Redis, secretKey string) gin.HandlerFunc {
+func (m *Middleware) JwtGuard() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -39,10 +38,10 @@ func JwtGuard(cache *cache.Redis, secretKey string) gin.HandlerFunc {
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 		token, err := jwt.ParseWithClaims(tokenString, &AllClaims{}, func(token *jwt.Token) (any, error) {
-			return secretKey, nil
+			return m.cfg.JwtSecret, nil
 		})
 
-		isBlacklisted, err := cache.IsBlacklisted(c.Request.Context(), tokenString)
+		isBlacklisted, err := m.cache.IsBlacklisted(c.Request.Context(), tokenString)
 
 		if err != nil || !token.Valid || isBlacklisted {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Session expired. Please log in"})

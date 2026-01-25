@@ -7,7 +7,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-func RateLimiter() gin.HandlerFunc {
+func (m *Middleware) RateLimiter() gin.HandlerFunc {
 	limiter := rate.NewLimiter(1, 5)
 
 	return func(c *gin.Context) {
