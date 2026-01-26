@@ -13,6 +13,6 @@ type TaskHandler struct {
 	cfg *config.Config
 }
 
-func NewTaskHandler(c *config.Config) *TaskHandler {
+func NewHandler(c *config.Config) *TaskHandler {
 	return &TaskHandler{cfg: c}
 }

@@ -15,39 +15,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type mockResult struct{}
-
-func (m *mockResult) LastInsertId() (int64, error) { return 1, nil }
-func (m *mockResult) RowsAffected() (int64, error) { return 1, nil }
-
-type mockUserRepo struct {
-	mock.Mock
-}
-
-func (m *mockUserRepo) CreateUser(ctx context.Context, params database.CreateUserParams) (sql.Result, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(sql.Result), args.Error(1)
-}
-
-func (m *mockUserRepo) GetUserByEmail(ctx context.Context, email string) (database.User, error) {
-	args := m.Called(ctx, email)
-	return args.Get(0).(database.User), args.Error(1)
-}
-
-func (m *mockUserRepo) GetUserByID(ctx context.Context, id int32) (database.User, error) {
-	args := m.Called(ctx, id)
-	return args.Get(0).(database.User), args.Error(1)
-}
-
-type mockTasksClient struct {
-	mock.Mock
-}
-
-func (m *mockTasksClient) Enqueue(task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error) {
-	args := m.Called(task, opts)
-	return args.Get(0).(*asynq.TaskInfo), args.Error(1)
-}
-
 func TestSignup(t *testing.T) {
 	testCfg := &config.Config{
 		DefaultProfileImage: "default_profile_image",
@@ -85,7 +52,7 @@ func TestSignup(t *testing.T) {
 			return p.Email == signupDto.Email &&
 				p.Name == signupDto.Name &&
 				p.ProfileImage.String == testCfg.DefaultProfileImage
-		})).Return(new(mockResult), nil)
+		})).Return(new(mockDbResult), nil)
 
 		mockRepo.On("GetUserByID", mock.Anything, mock.Anything).
 			Return(database.User{Email: signupDto.Email}, nil)
@@ -156,4 +123,17 @@ func TestLogin(t *testing.T) {
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
+}
+
+func TestGetProfile(t *testing.T) {
+	mockRepo := new(mockUserRepo)
+	svc := NewUserService(mockRepo, &config.Config{})
+
+	mockRepo.On("GetUserByID", mock.Anything, mock.Anything).
+		Return(database.User{}, nil)
+
+	_, err := svc.GetProfile(context.Background(), int32(1))
+
+	assert.NoError(t, err)
+	mockRepo.AssertExpectations(t)
 }

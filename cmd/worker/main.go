@@ -34,10 +34,10 @@ func main() {
 	)
 
 	// Define tasks handlers
-	handler := tasks.NewTaskHandler(cfg)
+	h := tasks.NewHandler(cfg)
 
 	mux := asynq.NewServeMux()
-	mux.HandleFunc("email_queue", handler.HandleEmailTask)
+	mux.HandleFunc("email_queue", h.HandleEmailTask)
 
 	// Initialize the scheduler
 	scheduler := asynq.NewScheduler(redisConn, nil)
