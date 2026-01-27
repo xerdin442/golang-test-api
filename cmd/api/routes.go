@@ -15,7 +15,7 @@ func (app *application) routes() http.Handler {
 	m := middleware.New(app.cfg, app.cache)
 
 	r.Use(m.CustomRequestLogger())
-	r.Use(m.RateLimiter())
+	r.Use(m.RateLimiters()...)
 	r.Use(gin.Recovery())
 
 	r.Use(cors.New(cors.Config{
